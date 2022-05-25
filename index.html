@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <style>
+    .layout{
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    button{
+      padding: 20px 30px;
+    }
+    img,
+    canvas{
+      display: block;
+      width: 200px;
+      height: 200px;
+      object-fit: contain;
+      border: 1px solid #000;
+    }
+  </style>
+  <input onChange="handleUploadFiles(event)" type='file' accept='image/*;capture=camera' />
+  <button style="display: none" onclick="save()">save</button>
+  <p></p>
+  <p id="print2"></p>
+  <p style="color: red" id="error"></p>
+  <div class="layout">
+    <div>
+      <span>img input</span>
+      <img id="img_input" src="" onload="onLoad()" alt="">
+    </div>
+    <div>
+      <span>canvas 1</span>
+      <canvas id="previewCanvasRef"></canvas>
+    </div>
+    <div>
+      <span>img from canvas 1</span>
+      <img id="img_result" src="" onload="onLoad2()" alt="">
+    </div>
+    <div>
+      <span>canvas 2</span>
+      <canvas id="canvas2"></canvas>
+    </div>
+    <div>
+      <span>final</span>
+      <img id="final" src="" alt="">
+    </div>
+  </div>
+  
+  <script>
+    const print = document.querySelector('p');
+    const errorE = document.querySelector('#error');
+    function handleUploadFiles(e){
+      const target = e.target;
+      const files = target.files;
+      console.log(files);
+      const file = files[0];
+      print.innerHTML = `
+        name: ${file.name}
+        <br>
+        type: ${file.type}
+      `
+      
+      const reader = new window.FileReader()
+      reader.addEventListener('load', () =>
+        document.querySelector('#img_input').src = reader.result.toString()
+      )
+      reader.readAsDataURL(file)
+    }
+    
+    function onLoad(e){
+      try {
+        const previewCanvasRef = document.querySelector('#previewCanvasRef');
+        const ctx = previewCanvasRef.getContext('2d')
+        const img = document.querySelector('#img_input')
+        previewCanvasRef.width = img.naturalWidth
+        previewCanvasRef.height = img.naturalHeight
+        ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight)
+        document.querySelector('button').style.display = 'block'
+      } catch (error) {
+        errorE.textContent = error
+      }
+    }
+
+    function save(){
+      try {
+        const previewCanvasRef = document.querySelector('#previewCanvasRef');
+        const imgResult = document.querySelector('#img_result');
+        const url = previewCanvasRef.toDataURL('image/png', 1)
+        imgResult.src = url
+      } catch (error) {
+        errorE.textContent = error
+      }
+    }
+
+    function onLoad2(e){
+      try {
+        const canvas2 = document.querySelector('#canvas2');
+        const ctx = canvas2.getContext('2d')
+        const img = document.querySelector('#img_result');
+        canvas2.width = img.naturalWidth / 2
+        canvas2.height = img.naturalHeight / 2
+        ctx.drawImage(img, 0, 0, img.naturalWidth / 2, img.naturalHeight / 2)
+        canvas2.toBlob(blob => {
+          try {
+            const print = document.querySelector('#print2');
+            const img = document.querySelector('#img_input')
+            const currectExtension = img.name.split('.').pop()
+            const newImage = new window.File([blob], 'result.png', { type: blob.type })
+            console.log('newImage', newImage)
+            print.innerHTML = `
+              <span>new file img</span>
+              name: ${newImage.name}
+              <br>
+              type: ${newImage.type}
+            `
+            const reader = new window.FileReader()
+            reader.addEventListener('load', () =>
+              document.querySelector('#final').src = reader.result.toString()
+            )
+            reader.readAsDataURL(newImage)
+          } catch (error) {
+            errorE.textContent = error
+          }
+        })
+      } catch (error) {
+        errorE.textContent = error
+      }
+
+    }
+  </script>
+</body>
+</html>
